@@ -7,10 +7,14 @@ RUN apt-get update && \
 
 RUN useradd --create-home appuser
 RUN apt install -y python3-pygame
+RUN apt install -y python3-pygbag
+
 USER appuser 
 
-COPY main.py .
+COPY pyPlanet/ .
 
-CMD [ "python3", "main.py" ]
+EXPOSE 8000
+
+CMD [ "pygbag", "pyPlanet" ]
 
 
