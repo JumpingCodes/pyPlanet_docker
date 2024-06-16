@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jsPlanet</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas"></canvas>
+    <script>
+        // Define constants
+        const AU = 149.6e6 * 1000;  // Astronomical Unit in meters
+        const G = 6.67430e-11;      // Gravitational constant
+        const SCALE = 300 / AU;     // Scale for distance conversion
+        const TIMESTEP = 3600 * 24; // Time step in seconds (1 day)
+
+        // Define colors
+        const colors = {
+            WHITE: "#FFFFFF",
+            YELLOW: "#FFCD07",
+            BLUE: "#037EB7",
+            ORANGE: "#D86806",
+            SILVER: "#666666",
+            BEIGE: "#F4DE9B"
+        };
+
+        // Planet class
+        class Planet {
+            constructor(x, y, radius, color, mass) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+                this.mass = mass;
+
+                this.orbit = [];
+                this.sun = false;
+                this.distance_to_sun = 0;
+
+                this.x_vel = 0;
+                this.y_vel = 0;
+            }
+
+            draw(context, canvas) {
+                let x = this.x * SCALE + canvas.width / 2;
+                let y = this.y * SCALE + canvas.height / 2;
+
+                if (this.orbit.length > 2) {
+                    context.beginPath();
+                    context.moveTo(this.orbit[0][0] * SCALE + canvas.width / 2, this.orbit[0][1] * SCALE + canvas.height / 2);
+                    for (let i = 1; i < this.orbit.length; i++) {
+                        let point = this.orbit[i];
+                        context.lineTo(point[0] * SCALE + canvas.width / 2, point[1] * SCALE + canvas.height / 2);
+                    }
+                    context.strokeStyle = this.color;
+                    context.lineWidth = 2;
+                    context.stroke();
+                }
+
+                context.beginPath();
+                context.arc(x, y, this.radius, 0, 2 * Math.PI);
+                context.fillStyle = this.color;
+                context.fill();
+                context.closePath();
+            }
+
+            attraction(other) {
+                let distance_x = other.x - this.x;
+                let distance_y = other.y - this.y;
+                let distance = Math.sqrt(distance_x ** 2 + distance_y ** 2);
+
+                if (other.sun) {
+                    this.distance_to_sun = distance;
+                }
+
+                let force = G * this.mass * other.mass / (distance ** 2);
+                let theta = Math.atan2(distance_y, distance_x);
+                let force_x = Math.cos(theta) * force;
+                let force_y = Math.sin(theta) * force;
+                return [force_x, force_y];
+            }
+
+            updatePosition(planets) {
+                let total_fx = 0;
+                let total_fy = 0;
+                for (let planet of planets) {
+                    if (this === planet) continue;
+
+                    let [fx, fy] = this.attraction(planet);
+                    total_fx += fx;
+                    total_fy += fy;
+                }
+
+                this.x_vel += total_fx / this.mass * TIMESTEP;
+                this.y_vel += total_fy / this.mass * TIMESTEP;
+
+                this.x += this.x_vel * TIMESTEP;
+                this.y += this.y_vel * TIMESTEP;
+                this.orbit.push([this.x, this.y]);
+            }
+        }
+
+        // Main function
+        function main() {
+            const canvas = document.getElementById("myCanvas");
+            const context = canvas.getContext("2d");
+
+            canvas.width = 1000;
+            canvas.height = 1000;
+
+            const sun = new Planet(0, 0, 6.95700, colors.YELLOW, 1.9885 * Math.pow(10, 30));
+            sun.sun = true;
+
+            const earth = new Planet(AU, 0, 12.756, colors.BLUE, 5.9722 * Math.pow(10, 24));
+            earth.y_vel = -29.8 * 1000;
+
+            const mars = new Planet(AU * 1.524, 0, 6.792, colors.ORANGE, 6.4171 * Math.pow(10, 23));
+            mars.y_vel = -24.1 * 1000;
+
+            const mercury = new Planet(AU * 0.39, 0, 4.879, colors.SILVER, 3.3011 * Math.pow(10, 23));
+            mercury.y_vel = -47.9 * 1000;
+
+            const venus = new Planet(AU * 0.72, 0, 12.104, colors.BEIGE, 4.867 * Math.pow(10, 24));
+            venus.y_vel = -35.0 * 1000;
+
+            const planets = [sun, earth, mars, mercury, venus];
+
+            function animate() {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+
+                for (let planet of planets) {
+                    planet.updatePosition(planets);
+                    planet.draw(context, canvas);
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        // Start the main function
+        main();
+    </script>
+</body>
+</html>
