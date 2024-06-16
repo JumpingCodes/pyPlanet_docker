@@ -1,6 +1,6 @@
 ### README.md
 
-# jsPlanet Simulator
+# pyPlanet Simulator
 
 This project is a simple planetary orbit simulator originally written in Python using Pygame, but now rewritten in JavaScript for the web. The simulation runs in an HTML5 canvas and displays the orbits of several planets around the sun.
 
